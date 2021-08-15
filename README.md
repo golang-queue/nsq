@@ -1,7 +1,8 @@
 # NSQ
 
-[![Run Tests](https://github.com/golang-queue/nsq/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/golang-queue/nsq/actions/workflows/go.yml)
-[![codecov](https://codecov.io/gh/golang-queue/nsq/branch/master/graph/badge.svg?token=V8A1WA0P5E)](https://codecov.io/gh/golang-queue/nsq)
+[![Run CI Lint](https://github.com/golang-queue/nsq/actions/workflows/lint.yml/badge.svg)](https://github.com/golang-queue/nsq/actions/workflows/lint.yml)
+[![Run Testing](https://github.com/golang-queue/nsq/actions/workflows/testing.yml/badge.svg)](https://github.com/golang-queue/nsq/actions/workflows/testing.yml)
+[![codecov](https://codecov.io/gh/golang-queue/nsq/branch/main/graph/badge.svg?token=D3CUES8M62)](https://codecov.io/gh/golang-queue/nsq)
 
 NSQ as backend with [Queue package](https://github.com/golang-queue/queue) (A realtime distributed messaging platform)
 
