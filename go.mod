@@ -1,4 +1,4 @@
-module github/golang-queue/nsq
+module github.com/golang-queue/nsq
 
 go 1.16
 
