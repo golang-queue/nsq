@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/golang-queue/nsq"
@@ -48,13 +47,11 @@ func main() {
 	)
 
 	// define the queue
-	q, err := queue.NewQueue(
-		queue.WithWorkerCount(10),
+	q := queue.NewPool(
+		10,
 		queue.WithWorker(w),
 	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	defer q.Release()
 
 	// start the five worker
 	q.Start()
@@ -73,9 +70,4 @@ func main() {
 		fmt.Println("message:", <-rets)
 		time.Sleep(50 * time.Millisecond)
 	}
-
-	// shutdown the service and notify all the worker
-	q.Shutdown()
-	// wait all jobs are complete.
-	q.Wait()
 }
