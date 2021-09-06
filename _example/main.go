@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/golang-queue/nsq"
@@ -34,13 +35,10 @@ func main() {
 		// concurrent job number
 		nsq.WithMaxInFlight(10),
 		nsq.WithRunFunc(func(ctx context.Context, m queue.QueuedMessage) error {
-			v, ok := m.(*job)
-			if !ok {
-				if err := json.Unmarshal(m.Bytes(), &v); err != nil {
-					return err
-				}
+			var v *job
+			if err := json.Unmarshal(m.Bytes(), &v); err != nil {
+				return err
 			}
-
 			rets <- v.Message
 			return nil
 		}),
@@ -59,9 +57,11 @@ func main() {
 	// assign tasks in queue
 	for i := 0; i < taskN; i++ {
 		go func(i int) {
-			q.Queue(&job{
+			if err := q.Queue(&job{
 				Message: fmt.Sprintf("handle the job: %d", i+1),
-			})
+			}); err != nil {
+				log.Fatal(err)
+			}
 		}(i)
 	}
 
