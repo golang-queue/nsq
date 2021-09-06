@@ -44,6 +44,7 @@ func (w *Worker) decBusyWorker() {
 	atomic.AddUint64(&w.busyWorkers, ^uint64(0))
 }
 
+// BusyWorkers return count of busy workers currently.
 func (w *Worker) BusyWorkers() uint64 {
 	return atomic.LoadUint64(&w.busyWorkers)
 }
