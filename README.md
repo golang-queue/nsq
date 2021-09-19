@@ -6,6 +6,8 @@
 
 NSQ as backend with [Queue package](https://github.com/golang-queue/queue) (A realtime distributed messaging platform)
 
+![screen](./images/screen.png)
+
 ## Setup
 
 start the NSQ lookupd
