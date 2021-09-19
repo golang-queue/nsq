@@ -51,9 +51,6 @@ func main() {
 	)
 	defer q.Release()
 
-	// start the five worker
-	q.Start()
-
 	// assign tasks in queue
 	for i := 0; i < taskN; i++ {
 		go func(i int) {
