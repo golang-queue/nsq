@@ -240,7 +240,9 @@ func (w *Worker) Shutdown() error {
 
 	w.stopOnce.Do(func() {
 		if atomic.LoadInt32(&w.startFlag) == 1 {
+			w.q.ChangeMaxInFlight(0)
 			w.q.Stop()
+			<-w.q.StopChan
 			w.p.Stop()
 		}
 
