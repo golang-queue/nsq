@@ -208,6 +208,13 @@ func (w *Worker) Run() error {
 				panicChan <- p
 			}
 		}()
+
+		// re-queue the job if worker has been shutdown.
+		if atomic.LoadInt32(&w.stopFlag) == 1 {
+			msg.Requeue(-1)
+			return nil
+		}
+
 		if len(msg.Body) == 0 {
 			// Returning nil will automatically send a FIN command to NSQ to mark the message as processed.
 			// In this case, a message with an empty body is simply ignored/discarded.
