@@ -12,9 +12,14 @@ import (
 	"github.com/golang-queue/queue"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/goleak"
 )
 
 var host = "127.0.0.1"
+
+func TestMain(m *testing.M) {
+	goleak.VerifyTestMain(m)
+}
 
 type mockMessage struct {
 	Message string
