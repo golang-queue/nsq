@@ -33,20 +33,20 @@ type Worker struct {
 	logger      queue.Logger
 	stopFlag    int32
 	startFlag   int32
-	busyWorkers uint64
+	metric      queue.Metric
 }
 
 func (w *Worker) incBusyWorker() {
-	atomic.AddUint64(&w.busyWorkers, 1)
+	w.metric.IncBusyWorker()
 }
 
 func (w *Worker) decBusyWorker() {
-	atomic.AddUint64(&w.busyWorkers, ^uint64(0))
+	w.metric.DecBusyWorker()
 }
 
 // BusyWorkers return count of busy workers currently.
 func (w *Worker) BusyWorkers() uint64 {
-	return atomic.LoadUint64(&w.busyWorkers)
+	return w.metric.BusyWorkers()
 }
 
 // WithAddr setup the addr of NSQ
