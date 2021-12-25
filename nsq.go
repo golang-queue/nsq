@@ -34,6 +34,7 @@ type Worker struct {
 	stopFlag    int32
 	startFlag   int32
 	metric      queue.Metric
+	disable     bool
 }
 
 func (w *Worker) incBusyWorker() {
@@ -98,9 +99,14 @@ func WithMetric(m queue.Metric) Option {
 	}
 }
 
+func withDisable() Option {
+	return func(w *Worker) {
+		w.disable = true
+	}
+}
+
 // NewWorker for struc
 func NewWorker(opts ...Option) *Worker {
-	var err error
 	w := &Worker{
 		addr:        "127.0.0.1:4150",
 		topic:       "gorush",
@@ -120,6 +126,17 @@ func NewWorker(opts ...Option) *Worker {
 		opt(w)
 	}
 
+	w.startProducerAndConsumer()
+
+	return w
+}
+
+func (w *Worker) startProducerAndConsumer() {
+	if w.disable {
+		return
+	}
+
+	var err error
 	cfg := nsq.NewConfig()
 	cfg.MaxInFlight = w.maxInFlight
 	w.q, err = nsq.NewConsumer(w.topic, w.channel, cfg)
@@ -131,8 +148,6 @@ func NewWorker(opts ...Option) *Worker {
 	if err != nil {
 		panic(err)
 	}
-
-	return w
 }
 
 // BeforeRun run script before start worker
