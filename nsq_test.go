@@ -114,7 +114,7 @@ func TestEnqueueJobAfterShutdown(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	q.Start()
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(400 * time.Millisecond)
 	q.Shutdown()
 	// can't queue task after shutdown
 	err = q.Queue(m)
@@ -134,7 +134,7 @@ func TestWorkerNumAfterShutdown(t *testing.T) {
 	assert.NoError(t, err)
 	q.Start()
 	q.Start()
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(400 * time.Millisecond)
 	assert.Equal(t, 4, q.Workers())
 	q.Shutdown()
 	q.Wait()
@@ -175,7 +175,7 @@ func TestJobReachTimeout(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	q.Start()
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(400 * time.Millisecond)
 	assert.NoError(t, q.QueueWithTimeout(20*time.Millisecond, m))
 	time.Sleep(2 * time.Second)
 	q.Shutdown()
@@ -213,7 +213,7 @@ func TestCancelJobAfterShutdown(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	q.Start()
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(400 * time.Millisecond)
 	assert.NoError(t, q.QueueWithTimeout(3*time.Second, m))
 	time.Sleep(2 * time.Second)
 	q.Shutdown()
@@ -254,7 +254,7 @@ func TestGoroutineLeak(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	q.Start()
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(400 * time.Millisecond)
 	for i := 0; i < 500; i++ {
 		m.Message = fmt.Sprintf("foobar: %d", i+1)
 		assert.NoError(t, q.Queue(m))
@@ -283,7 +283,7 @@ func TestGoroutinePanic(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	q.Start()
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(400 * time.Millisecond)
 	assert.NoError(t, q.Queue(m))
 	assert.NoError(t, q.Queue(m))
 	time.Sleep(2 * time.Second)
@@ -302,6 +302,7 @@ func TestHandleTimeout(t *testing.T) {
 			time.Sleep(200 * time.Millisecond)
 			return nil
 		}),
+		withDisable(),
 	)
 
 	err := w.handle(job)
@@ -318,6 +319,7 @@ func TestHandleTimeout(t *testing.T) {
 			time.Sleep(200 * time.Millisecond)
 			return nil
 		}),
+		withDisable(),
 	)
 
 	done := make(chan error)
@@ -341,6 +343,7 @@ func TestJobComplete(t *testing.T) {
 		WithRunFunc(func(ctx context.Context, m queue.QueuedMessage) error {
 			return errors.New("job completed")
 		}),
+		withDisable(),
 	)
 
 	err := w.handle(job)
@@ -357,6 +360,7 @@ func TestJobComplete(t *testing.T) {
 			time.Sleep(200 * time.Millisecond)
 			return errors.New("job completed")
 		}),
+		withDisable(),
 	)
 
 	done := make(chan error)
@@ -382,6 +386,7 @@ func TestBusyWorkerCount(t *testing.T) {
 			time.Sleep(200 * time.Millisecond)
 			return nil
 		}),
+		withDisable(),
 	)
 
 	assert.Equal(t, uint64(0), w.BusyWorkers())
