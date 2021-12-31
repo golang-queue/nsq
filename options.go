@@ -2,6 +2,7 @@ package nsq
 
 import (
 	"context"
+	"runtime"
 
 	"github.com/golang-queue/queue"
 )
@@ -73,4 +74,27 @@ func withDisable() Option {
 	return func(w *options) {
 		w.disable = true
 	}
+}
+
+func newOptions(opts ...Option) options {
+	defaultOpts := options{
+		addr:        "127.0.0.1:4150",
+		topic:       "gorush",
+		channel:     "ch",
+		maxInFlight: runtime.NumCPU(),
+
+		logger: queue.NewLogger(),
+		runFunc: func(context.Context, queue.QueuedMessage) error {
+			return nil
+		},
+		metric: queue.NewMetric(),
+	}
+
+	// Loop through each option
+	for _, opt := range opts {
+		// Call the option giving the instantiated
+		opt(&defaultOpts)
+	}
+
+	return defaultOpts
 }

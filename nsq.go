@@ -3,7 +3,6 @@ package nsq
 import (
 	"context"
 	"encoding/json"
-	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -42,27 +41,8 @@ func (w *Worker) BusyWorkers() uint64 {
 
 // NewWorker for struc
 func NewWorker(opts ...Option) *Worker {
-	defaultOpts := options{
-		addr:        "127.0.0.1:4150",
-		topic:       "gorush",
-		channel:     "ch",
-		maxInFlight: runtime.NumCPU(),
-
-		logger: queue.NewLogger(),
-		runFunc: func(context.Context, queue.QueuedMessage) error {
-			return nil
-		},
-		metric: queue.NewMetric(),
-	}
-
-	// Loop through each option
-	for _, opt := range opts {
-		// Call the option giving the instantiated
-		opt(&defaultOpts)
-	}
-
 	w := &Worker{
-		opts: defaultOpts,
+		opts: newOptions(opts...),
 		stop: make(chan struct{}),
 	}
 
