@@ -15,105 +15,40 @@ import (
 
 var _ queue.Worker = (*Worker)(nil)
 
-// Option for queue system
-type Option func(*Worker)
-
 // Worker for NSQ
 type Worker struct {
-	q           *nsq.Consumer
-	p           *nsq.Producer
-	startOnce   sync.Once
-	stopOnce    sync.Once
-	stop        chan struct{}
-	maxInFlight int
-	addr        string
-	topic       string
-	channel     string
-	runFunc     func(context.Context, queue.QueuedMessage) error
-	logger      queue.Logger
-	stopFlag    int32
-	startFlag   int32
-	metric      queue.Metric
-	disable     bool
+	q         *nsq.Consumer
+	p         *nsq.Producer
+	startOnce sync.Once
+	stopOnce  sync.Once
+	stop      chan struct{}
+	stopFlag  int32
+	startFlag int32
+	opts      options
 }
 
 func (w *Worker) incBusyWorker() {
-	w.metric.IncBusyWorker()
+	w.opts.metric.IncBusyWorker()
 }
 
 func (w *Worker) decBusyWorker() {
-	w.metric.DecBusyWorker()
+	w.opts.metric.DecBusyWorker()
 }
 
 // BusyWorkers return count of busy workers currently.
 func (w *Worker) BusyWorkers() uint64 {
-	return w.metric.BusyWorkers()
-}
-
-// WithAddr setup the addr of NSQ
-func WithAddr(addr string) Option {
-	return func(w *Worker) {
-		w.addr = addr
-	}
-}
-
-// WithTopic setup the topic of NSQ
-func WithTopic(topic string) Option {
-	return func(w *Worker) {
-		w.topic = topic
-	}
-}
-
-// WithChannel setup the channel of NSQ
-func WithChannel(channel string) Option {
-	return func(w *Worker) {
-		w.channel = channel
-	}
-}
-
-// WithRunFunc setup the run func of queue
-func WithRunFunc(fn func(context.Context, queue.QueuedMessage) error) Option {
-	return func(w *Worker) {
-		w.runFunc = fn
-	}
-}
-
-// WithMaxInFlight Maximum number of messages to allow in flight (concurrency knob)
-func WithMaxInFlight(num int) Option {
-	return func(w *Worker) {
-		w.maxInFlight = num
-	}
-}
-
-// WithLogger set custom logger
-func WithLogger(l queue.Logger) Option {
-	return func(w *Worker) {
-		w.logger = l
-	}
-}
-
-// WithMetric set custom Metric
-func WithMetric(m queue.Metric) Option {
-	return func(w *Worker) {
-		w.metric = m
-	}
-}
-
-func withDisable() Option {
-	return func(w *Worker) {
-		w.disable = true
-	}
+	return w.opts.metric.BusyWorkers()
 }
 
 // NewWorker for struc
 func NewWorker(opts ...Option) *Worker {
-	w := &Worker{
+	defaultOpts := options{
 		addr:        "127.0.0.1:4150",
 		topic:       "gorush",
 		channel:     "ch",
 		maxInFlight: runtime.NumCPU(),
-		stop:        make(chan struct{}),
-		logger:      queue.NewLogger(),
+
+		logger: queue.NewLogger(),
 		runFunc: func(context.Context, queue.QueuedMessage) error {
 			return nil
 		},
@@ -123,7 +58,12 @@ func NewWorker(opts ...Option) *Worker {
 	// Loop through each option
 	for _, opt := range opts {
 		// Call the option giving the instantiated
-		opt(w)
+		opt(&defaultOpts)
+	}
+
+	w := &Worker{
+		opts: defaultOpts,
+		stop: make(chan struct{}),
 	}
 
 	w.startProducerAndConsumer()
@@ -132,19 +72,19 @@ func NewWorker(opts ...Option) *Worker {
 }
 
 func (w *Worker) startProducerAndConsumer() {
-	if w.disable {
+	if w.opts.disable {
 		return
 	}
 
 	var err error
 	cfg := nsq.NewConfig()
-	cfg.MaxInFlight = w.maxInFlight
-	w.q, err = nsq.NewConsumer(w.topic, w.channel, cfg)
+	cfg.MaxInFlight = w.opts.maxInFlight
+	w.q, err = nsq.NewConsumer(w.opts.topic, w.opts.channel, cfg)
 	if err != nil {
 		panic(err)
 	}
 
-	w.p, err = nsq.NewProducer(w.addr, cfg)
+	w.p, err = nsq.NewProducer(w.opts.addr, cfg)
 	if err != nil {
 		panic(err)
 	}
@@ -159,7 +99,7 @@ func (w *Worker) BeforeRun() error {
 func (w *Worker) AfterRun() error {
 	w.startOnce.Do(func() {
 		time.Sleep(100 * time.Millisecond)
-		err := w.q.ConnectToNSQD(w.addr)
+		err := w.q.ConnectToNSQD(w.opts.addr)
 		if err != nil {
 			panic("Could not connect nsq server: " + err.Error())
 		}
@@ -192,7 +132,7 @@ func (w *Worker) handle(job queue.Job) error {
 		}()
 
 		// run custom process function
-		done <- w.runFunc(ctx, job)
+		done <- w.opts.runFunc(ctx, job)
 	}()
 
 	select {
@@ -253,7 +193,7 @@ func (w *Worker) Run() error {
 	select {
 	case <-w.stop:
 	case err := <-panicChan:
-		w.logger.Error(err)
+		w.opts.logger.Error(err)
 	}
 
 	// wait job completed
@@ -297,7 +237,7 @@ func (w *Worker) Queue(job queue.QueuedMessage) error {
 		return queue.ErrQueueShutdown
 	}
 
-	err := w.p.Publish(w.topic, job.Bytes())
+	err := w.p.Publish(w.opts.topic, job.Bytes())
 	if err != nil {
 		return err
 	}
