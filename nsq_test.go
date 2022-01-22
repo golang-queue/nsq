@@ -295,7 +295,7 @@ func TestGoroutinePanic(t *testing.T) {
 func TestHandleTimeout(t *testing.T) {
 	job := queue.Job{
 		Timeout: 100 * time.Millisecond,
-		Body:    []byte("foo"),
+		Payload: []byte("foo"),
 	}
 	w := NewWorker(
 		WithRunFunc(func(ctx context.Context, m queue.QueuedMessage) error {
@@ -311,7 +311,7 @@ func TestHandleTimeout(t *testing.T) {
 
 	job = queue.Job{
 		Timeout: 150 * time.Millisecond,
-		Body:    []byte("foo"),
+		Payload: []byte("foo"),
 	}
 
 	w = NewWorker(
@@ -337,7 +337,7 @@ func TestHandleTimeout(t *testing.T) {
 func TestJobComplete(t *testing.T) {
 	job := queue.Job{
 		Timeout: 100 * time.Millisecond,
-		Body:    []byte("foo"),
+		Payload: []byte("foo"),
 	}
 	w := NewWorker(
 		WithRunFunc(func(ctx context.Context, m queue.QueuedMessage) error {
@@ -352,7 +352,7 @@ func TestJobComplete(t *testing.T) {
 
 	job = queue.Job{
 		Timeout: 250 * time.Millisecond,
-		Body:    []byte("foo"),
+		Payload: []byte("foo"),
 	}
 
 	w = NewWorker(
@@ -378,7 +378,7 @@ func TestJobComplete(t *testing.T) {
 func TestBusyWorkerCount(t *testing.T) {
 	job := queue.Job{
 		Timeout: 500 * time.Millisecond,
-		Body:    []byte("foo"),
+		Payload: []byte("foo"),
 	}
 
 	w := NewWorker(
