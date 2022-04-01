@@ -44,12 +44,11 @@ func TestNSQDefaultFlow(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	q.Start()
-	time.Sleep(100 * time.Millisecond)
 	assert.NoError(t, q.Queue(m))
 	m.Message = "bar"
 	assert.NoError(t, q.Queue(m))
-	q.Shutdown()
-	q.Wait()
+	time.Sleep(1 * time.Second)
+	q.Release()
 }
 
 func TestNSQShutdown(t *testing.T) {
@@ -96,8 +95,7 @@ func TestNSQCustomFuncAndWait(t *testing.T) {
 	assert.NoError(t, q.Queue(m))
 	assert.NoError(t, q.Queue(m))
 	time.Sleep(1000 * time.Millisecond)
-	q.Shutdown()
-	q.Wait()
+	q.Release()
 	// you will see the execute time > 1000ms
 }
 
@@ -121,27 +119,6 @@ func TestEnqueueJobAfterShutdown(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, queue.ErrQueueShutdown, err)
 	q.Wait()
-}
-
-func TestWorkerNumAfterShutdown(t *testing.T) {
-	w := NewWorker(
-		WithAddr(host + ":4150"),
-	)
-	q, err := queue.NewQueue(
-		queue.WithWorker(w),
-		queue.WithWorkerCount(2),
-	)
-	assert.NoError(t, err)
-	q.Start()
-	q.Start()
-	time.Sleep(400 * time.Millisecond)
-	assert.Equal(t, 4, q.Workers())
-	q.Shutdown()
-	q.Wait()
-	assert.Equal(t, 0, q.Workers())
-	q.Start()
-	q.Start()
-	assert.Equal(t, 0, q.Workers())
 }
 
 func TestJobReachTimeout(t *testing.T) {
@@ -178,8 +155,7 @@ func TestJobReachTimeout(t *testing.T) {
 	time.Sleep(400 * time.Millisecond)
 	assert.NoError(t, q.QueueWithTimeout(20*time.Millisecond, m))
 	time.Sleep(2 * time.Second)
-	q.Shutdown()
-	q.Wait()
+	q.Release()
 }
 
 func TestCancelJobAfterShutdown(t *testing.T) {
@@ -216,8 +192,7 @@ func TestCancelJobAfterShutdown(t *testing.T) {
 	time.Sleep(400 * time.Millisecond)
 	assert.NoError(t, q.QueueWithTimeout(3*time.Second, m))
 	time.Sleep(2 * time.Second)
-	q.Shutdown()
-	q.Wait()
+	q.Release()
 }
 
 func TestGoroutineLeak(t *testing.T) {
@@ -260,8 +235,7 @@ func TestGoroutineLeak(t *testing.T) {
 		assert.NoError(t, q.Queue(m))
 	}
 	time.Sleep(2 * time.Second)
-	q.Shutdown()
-	q.Wait()
+	q.Release()
 	time.Sleep(2 * time.Second)
 	fmt.Println("number of goroutines:", runtime.NumGoroutine())
 }
@@ -302,7 +276,7 @@ func TestHandleTimeout(t *testing.T) {
 			time.Sleep(200 * time.Millisecond)
 			return nil
 		}),
-		withDisable(),
+		withDisableConsumer(),
 	)
 
 	err := w.handle(job)
@@ -319,7 +293,7 @@ func TestHandleTimeout(t *testing.T) {
 			time.Sleep(200 * time.Millisecond)
 			return nil
 		}),
-		withDisable(),
+		withDisableConsumer(),
 	)
 
 	done := make(chan error)
@@ -343,7 +317,7 @@ func TestJobComplete(t *testing.T) {
 		WithRunFunc(func(ctx context.Context, m queue.QueuedMessage) error {
 			return errors.New("job completed")
 		}),
-		withDisable(),
+		withDisableConsumer(),
 	)
 
 	err := w.handle(job)
@@ -360,7 +334,6 @@ func TestJobComplete(t *testing.T) {
 			time.Sleep(200 * time.Millisecond)
 			return errors.New("job completed")
 		}),
-		withDisable(),
 	)
 
 	done := make(chan error)
@@ -373,34 +346,4 @@ func TestJobComplete(t *testing.T) {
 	err = <-done
 	assert.Error(t, err)
 	assert.Equal(t, errors.New("job completed"), err)
-}
-
-func TestBusyWorkerCount(t *testing.T) {
-	job := queue.Job{
-		Timeout: 500 * time.Millisecond,
-		Payload: []byte("foo"),
-	}
-
-	w := NewWorker(
-		WithRunFunc(func(ctx context.Context, m queue.QueuedMessage) error {
-			time.Sleep(200 * time.Millisecond)
-			return nil
-		}),
-		withDisable(),
-	)
-
-	assert.Equal(t, uint64(0), w.BusyWorkers())
-	go func() {
-		assert.NoError(t, w.handle(job))
-	}()
-	go func() {
-		assert.NoError(t, w.handle(job))
-	}()
-
-	time.Sleep(50 * time.Millisecond)
-	assert.Equal(t, uint64(2), w.BusyWorkers())
-	time.Sleep(200 * time.Millisecond)
-	assert.Equal(t, uint64(0), w.BusyWorkers())
-
-	assert.NoError(t, w.Shutdown())
 }

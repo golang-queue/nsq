@@ -18,75 +18,87 @@ var _ queue.Worker = (*Worker)(nil)
 type Worker struct {
 	q         *nsq.Consumer
 	p         *nsq.Producer
-	startOnce sync.Once
 	stopOnce  sync.Once
 	stop      chan struct{}
 	stopFlag  int32
 	startFlag int32
 	opts      options
-}
-
-func (w *Worker) incBusyWorker() {
-	w.opts.metric.IncBusyWorker()
-}
-
-func (w *Worker) decBusyWorker() {
-	w.opts.metric.DecBusyWorker()
-}
-
-// BusyWorkers return count of busy workers currently.
-func (w *Worker) BusyWorkers() uint64 {
-	return w.opts.metric.BusyWorkers()
+	tasks     chan *nsq.Message
 }
 
 // NewWorker for struc
 func NewWorker(opts ...Option) *Worker {
 	w := &Worker{
-		opts: newOptions(opts...),
-		stop: make(chan struct{}),
+		opts:  newOptions(opts...),
+		stop:  make(chan struct{}),
+		tasks: make(chan *nsq.Message, 1),
 	}
 
-	w.startProducerAndConsumer()
+	cfg := nsq.NewConfig()
+	cfg.MaxInFlight = w.opts.maxInFlight
+
+	if err := w.startProducer(cfg); err != nil {
+		panic(err)
+	}
+
+	if err := w.startConsumer(cfg); err != nil {
+		panic(err)
+	}
 
 	return w
 }
 
-func (w *Worker) startProducerAndConsumer() {
-	if w.opts.disable {
-		return
+func (w *Worker) startProducer(cfg *nsq.Config) error {
+	var err error
+
+	w.p, err = nsq.NewProducer(w.opts.addr, cfg)
+
+	return err
+}
+
+func (w *Worker) startConsumer(cfg *nsq.Config) error {
+	if w.opts.disableConsumer {
+		return nil
 	}
 
 	var err error
-	cfg := nsq.NewConfig()
-	cfg.MaxInFlight = w.opts.maxInFlight
+
 	w.q, err = nsq.NewConsumer(w.opts.topic, w.opts.channel, cfg)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	w.p, err = nsq.NewProducer(w.opts.addr, cfg)
-	if err != nil {
-		panic(err)
-	}
-}
-
-// BeforeRun run script before start worker
-func (w *Worker) BeforeRun() error {
-	return nil
-}
-
-// AfterRun run script after start worker
-func (w *Worker) AfterRun() error {
-	w.startOnce.Do(func() {
-		time.Sleep(100 * time.Millisecond)
-		err := w.q.ConnectToNSQD(w.opts.addr)
-		if err != nil {
-			panic("Could not connect nsq server: " + err.Error())
+	w.q.AddHandler(nsq.HandlerFunc(func(msg *nsq.Message) error {
+		// re-queue the job if worker has been shutdown.
+		if atomic.LoadInt32(&w.stopFlag) == 1 {
+			msg.Requeue(-1)
+			return nil
 		}
 
-		atomic.CompareAndSwapInt32(&w.startFlag, 0, 1)
-	})
+		if len(msg.Body) == 0 {
+			// Returning nil will automatically send a FIN command to NSQ to mark the message as processed.
+			// In this case, a message with an empty body is simply ignored/discarded.
+			return nil
+		}
 
+		select {
+		case w.tasks <- msg:
+		case <-w.stop:
+			if msg != nil {
+				// re-queue the job if worker has been shutdown.
+				msg.Requeue(-1)
+			}
+		}
+
+		return nil
+	}))
+
+	err = w.q.ConnectToNSQD(w.opts.addr)
+	if err != nil {
+		return err
+	}
+
+	atomic.CompareAndSwapInt32(&w.startFlag, 0, 1)
 	return nil
 }
 
@@ -96,10 +108,8 @@ func (w *Worker) handle(job queue.Job) error {
 	panicChan := make(chan interface{}, 1)
 	startTime := time.Now()
 	ctx, cancel := context.WithTimeout(context.Background(), job.Timeout)
-	w.incBusyWorker()
 	defer func() {
 		cancel()
-		w.decBusyWorker()
 	}()
 
 	// run the job
@@ -140,44 +150,12 @@ func (w *Worker) handle(job queue.Job) error {
 }
 
 // Run start the worker
-func (w *Worker) Run() error {
-	wg := &sync.WaitGroup{}
-	panicChan := make(chan interface{}, 1)
-	w.q.AddHandler(nsq.HandlerFunc(func(msg *nsq.Message) error {
-		wg.Add(1)
-		defer func() {
-			wg.Done()
-			if p := recover(); p != nil {
-				panicChan <- p
-			}
-		}()
+func (w *Worker) Run(task queue.QueuedMessage) error {
+	data, _ := task.(queue.Job)
 
-		// re-queue the job if worker has been shutdown.
-		if atomic.LoadInt32(&w.stopFlag) == 1 {
-			msg.Requeue(-1)
-			return nil
-		}
-
-		if len(msg.Body) == 0 {
-			// Returning nil will automatically send a FIN command to NSQ to mark the message as processed.
-			// In this case, a message with an empty body is simply ignored/discarded.
-			return nil
-		}
-
-		var data queue.Job
-		_ = json.Unmarshal(msg.Body, &data)
-		return w.handle(data)
-	}))
-
-	// wait close signal
-	select {
-	case <-w.stop:
-	case err := <-panicChan:
-		w.opts.logger.Error(err)
+	if err := w.handle(data); err != nil {
+		return err
 	}
-
-	// wait job completed
-	wg.Wait()
 
 	return nil
 }
@@ -189,26 +167,19 @@ func (w *Worker) Shutdown() error {
 	}
 
 	w.stopOnce.Do(func() {
+		// notify shtdown event to worker and consumer
+		close(w.stop)
+		// stop producer and consumer
 		if atomic.LoadInt32(&w.startFlag) == 1 {
 			w.q.ChangeMaxInFlight(0)
 			w.q.Stop()
 			<-w.q.StopChan
 			w.p.Stop()
 		}
-
-		close(w.stop)
+		// close task channel
+		close(w.tasks)
 	})
 	return nil
-}
-
-// Capacity for channel
-func (w *Worker) Capacity() int {
-	return 0
-}
-
-// Usage for count of channel usage
-func (w *Worker) Usage() int {
-	return 0
 }
 
 // Queue send notification to queue
@@ -223,4 +194,19 @@ func (w *Worker) Queue(job queue.QueuedMessage) error {
 	}
 
 	return nil
+}
+
+// Request fetch new task from queue
+func (w *Worker) Request() (queue.QueuedMessage, error) {
+	select {
+	case task, ok := <-w.tasks:
+		if !ok {
+			return nil, queue.ErrQueueHasBeenClosed
+		}
+		var data queue.Job
+		_ = json.Unmarshal(task.Body, &data)
+		return data, nil
+	default:
+		return nil, queue.ErrNoTaskInQueue
+	}
 }
