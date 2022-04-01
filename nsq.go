@@ -198,15 +198,24 @@ func (w *Worker) Queue(job queue.QueuedMessage) error {
 
 // Request fetch new task from queue
 func (w *Worker) Request() (queue.QueuedMessage, error) {
-	select {
-	case task, ok := <-w.tasks:
-		if !ok {
-			return nil, queue.ErrQueueHasBeenClosed
+	clock := 0
+loop:
+	for {
+		select {
+		case task, ok := <-w.tasks:
+			if !ok {
+				return nil, queue.ErrQueueHasBeenClosed
+			}
+			var data queue.Job
+			_ = json.Unmarshal(task.Body, &data)
+			return data, nil
+		case <-time.After(1 * time.Second):
+			if clock == 5 {
+				break loop
+			}
+			clock += 1
 		}
-		var data queue.Job
-		_ = json.Unmarshal(task.Body, &data)
-		return data, nil
-	default:
-		return nil, queue.ErrNoTaskInQueue
 	}
+
+	return nil, queue.ErrNoTaskInQueue
 }

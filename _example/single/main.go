@@ -65,6 +65,6 @@ func main() {
 	// wait until all tasks done
 	for i := 0; i < taskN; i++ {
 		fmt.Println("message:", <-rets)
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 	}
 }
