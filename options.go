@@ -11,14 +11,13 @@ import (
 type Option func(*options)
 
 type options struct {
-	maxInFlight int
-	addr        string
-	topic       string
-	channel     string
-	runFunc     func(context.Context, queue.QueuedMessage) error
-	logger      queue.Logger
-	metric      queue.Metric
-	disable     bool
+	maxInFlight     int
+	addr            string
+	topic           string
+	channel         string
+	runFunc         func(context.Context, queue.QueuedMessage) error
+	logger          queue.Logger
+	disableConsumer bool
 }
 
 // WithAddr setup the addr of NSQ
@@ -63,16 +62,9 @@ func WithLogger(l queue.Logger) Option {
 	}
 }
 
-// WithMetric set custom Metric
-func WithMetric(m queue.Metric) Option {
+func withDisableConsumer() Option {
 	return func(w *options) {
-		w.metric = m
-	}
-}
-
-func withDisable() Option {
-	return func(w *options) {
-		w.disable = true
+		w.disableConsumer = true
 	}
 }
 
@@ -87,7 +79,6 @@ func newOptions(opts ...Option) options {
 		runFunc: func(context.Context, queue.QueuedMessage) error {
 			return nil
 		},
-		metric: queue.NewMetric(),
 	}
 
 	// Loop through each option
