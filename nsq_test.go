@@ -276,7 +276,7 @@ func TestHandleTimeout(t *testing.T) {
 			time.Sleep(200 * time.Millisecond)
 			return nil
 		}),
-		withDisableConsumer(),
+		WithDisableConsumer(),
 	)
 
 	err := w.handle(job)
@@ -293,7 +293,7 @@ func TestHandleTimeout(t *testing.T) {
 			time.Sleep(200 * time.Millisecond)
 			return nil
 		}),
-		withDisableConsumer(),
+		WithDisableConsumer(),
 	)
 
 	done := make(chan error)
@@ -317,7 +317,7 @@ func TestJobComplete(t *testing.T) {
 		WithRunFunc(func(ctx context.Context, m queue.QueuedMessage) error {
 			return errors.New("job completed")
 		}),
-		withDisableConsumer(),
+		WithDisableConsumer(),
 	)
 
 	err := w.handle(job)

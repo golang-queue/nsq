@@ -62,7 +62,8 @@ func WithLogger(l queue.Logger) Option {
 	}
 }
 
-func withDisableConsumer() Option {
+// WithDisableConsumer disable consumer
+func WithDisableConsumer() Option {
 	return func(w *options) {
 		w.disableConsumer = true
 	}
