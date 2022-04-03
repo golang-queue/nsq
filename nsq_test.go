@@ -385,11 +385,15 @@ func TestNSQStatsInWorker(t *testing.T) {
 		WithTopic("nsq_stats_queue"),
 	)
 
+	assert.Equal(t, int(0), len(w.tasks))
 	assert.NoError(t, w.Queue(m))
 	assert.NoError(t, w.Queue(m))
 	assert.NoError(t, w.Queue(m))
 	assert.Equal(t, int(1), w.Stats().Connections)
+	assert.Equal(t, int(1), len(w.tasks))
+
 	time.Sleep(300 * time.Millisecond)
+
 	assert.Equal(t, uint64(3), w.Stats().MessagesReceived)
 	assert.Equal(t, uint64(1), w.Stats().MessagesFinished)
 	assert.Equal(t, uint64(0), w.Stats().MessagesRequeued)
