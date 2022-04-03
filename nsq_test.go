@@ -347,3 +347,52 @@ func TestJobComplete(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, errors.New("job completed"), err)
 }
+
+func TestNSQStatsinQueue(t *testing.T) {
+	m := mockMessage{
+		Message: "foo",
+	}
+	w := NewWorker(
+		WithAddr(host+":4150"),
+		WithTopic("nsq_stats"),
+		WithRunFunc(func(ctx context.Context, m queue.QueuedMessage) error {
+			log.Println("get message")
+			return nil
+		}),
+	)
+	q, err := queue.NewQueue(
+		queue.WithWorker(w),
+		queue.WithWorkerCount(1),
+	)
+	assert.NoError(t, err)
+	assert.NoError(t, q.Queue(m))
+	assert.NoError(t, q.Queue(m))
+	q.Start()
+	assert.Equal(t, int(1), w.Stats().Connections)
+	time.Sleep(500 * time.Millisecond)
+	assert.Equal(t, uint64(2), w.Stats().MessagesReceived)
+	assert.Equal(t, uint64(2), w.Stats().MessagesFinished)
+	q.Release()
+	assert.Equal(t, int(0), w.Stats().Connections)
+}
+
+func TestNSQStatsInWorker(t *testing.T) {
+	m := mockMessage{
+		Message: "foo",
+	}
+	w := NewWorker(
+		WithAddr(host+":4150"),
+		WithTopic("nsq_stats_queue"),
+	)
+
+	assert.NoError(t, w.Queue(m))
+	assert.NoError(t, w.Queue(m))
+	assert.NoError(t, w.Queue(m))
+	assert.Equal(t, int(1), w.Stats().Connections)
+	time.Sleep(300 * time.Millisecond)
+	assert.Equal(t, uint64(3), w.Stats().MessagesReceived)
+	assert.Equal(t, uint64(1), w.Stats().MessagesFinished)
+	assert.Equal(t, uint64(0), w.Stats().MessagesRequeued)
+
+	_ = w.Shutdown()
+}
