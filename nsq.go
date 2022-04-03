@@ -183,12 +183,7 @@ func (w *Worker) Queue(job queue.QueuedMessage) error {
 		return queue.ErrQueueShutdown
 	}
 
-	err := w.p.Publish(w.opts.topic, job.Bytes())
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return w.p.Publish(w.opts.topic, job.Bytes())
 }
 
 // Request fetch new task from queue
