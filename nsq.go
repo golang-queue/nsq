@@ -69,12 +69,6 @@ func (w *Worker) startConsumer(cfg *nsq.Config) error {
 	}
 
 	w.q.AddHandler(nsq.HandlerFunc(func(msg *nsq.Message) error {
-		// re-queue the job if worker has been shutdown.
-		if atomic.LoadInt32(&w.stopFlag) == 1 {
-			msg.Requeue(-1)
-			return nil
-		}
-
 		if len(msg.Body) == 0 {
 			// Returning nil will automatically send a FIN command to NSQ to mark the message as processed.
 			// In this case, a message with an empty body is simply ignored/discarded.
@@ -86,6 +80,7 @@ func (w *Worker) startConsumer(cfg *nsq.Config) error {
 		case <-w.stop:
 			if msg != nil {
 				// re-queue the job if worker has been shutdown.
+				w.opts.logger.Info("re-queue the old job")
 				msg.Requeue(-1)
 			}
 		}
@@ -218,4 +213,13 @@ loop:
 	}
 
 	return nil, queue.ErrNoTaskInQueue
+}
+
+// Stats retrieves the current connection and message statistics for a Consumer
+func (w *Worker) Stats() *nsq.ConsumerStats {
+	if w.q == nil {
+		return nil
+	}
+
+	return w.q.Stats()
 }
