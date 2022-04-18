@@ -166,6 +166,7 @@ func (w *Worker) Run() error {
 
 		var data queue.Job
 		_ = json.Unmarshal(msg.Body, &data)
+		msg.Finish()
 		return w.handle(data)
 	}))
 
