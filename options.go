@@ -5,6 +5,7 @@ import (
 	"runtime"
 
 	"github.com/golang-queue/queue"
+	"github.com/golang-queue/queue/core"
 )
 
 // Option for queue system
@@ -15,7 +16,7 @@ type options struct {
 	addr            string
 	topic           string
 	channel         string
-	runFunc         func(context.Context, queue.QueuedMessage) error
+	runFunc         func(context.Context, core.QueuedMessage) error
 	logger          queue.Logger
 	disableConsumer bool
 }
@@ -42,7 +43,7 @@ func WithChannel(channel string) Option {
 }
 
 // WithRunFunc setup the run func of queue
-func WithRunFunc(fn func(context.Context, queue.QueuedMessage) error) Option {
+func WithRunFunc(fn func(context.Context, core.QueuedMessage) error) Option {
 	return func(w *options) {
 		w.runFunc = fn
 	}
@@ -77,7 +78,7 @@ func newOptions(opts ...Option) options {
 		maxInFlight: runtime.NumCPU(),
 
 		logger: queue.NewLogger(),
-		runFunc: func(context.Context, queue.QueuedMessage) error {
+		runFunc: func(context.Context, core.QueuedMessage) error {
 			return nil
 		},
 	}

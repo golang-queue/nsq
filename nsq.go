@@ -8,11 +8,12 @@ import (
 	"time"
 
 	"github.com/golang-queue/queue"
+	"github.com/golang-queue/queue/core"
 
 	"github.com/nsqio/go-nsq"
 )
 
-var _ queue.Worker = (*Worker)(nil)
+var _ core.Worker = (*Worker)(nil)
 
 // Worker for NSQ
 type Worker struct {
@@ -145,7 +146,7 @@ func (w *Worker) handle(job queue.Job) error {
 }
 
 // Run start the worker
-func (w *Worker) Run(task queue.QueuedMessage) error {
+func (w *Worker) Run(task core.QueuedMessage) error {
 	data, _ := task.(queue.Job)
 
 	if err := w.handle(data); err != nil {
@@ -178,7 +179,7 @@ func (w *Worker) Shutdown() error {
 }
 
 // Queue send notification to queue
-func (w *Worker) Queue(job queue.QueuedMessage) error {
+func (w *Worker) Queue(job core.QueuedMessage) error {
 	if atomic.LoadInt32(&w.stopFlag) == 1 {
 		return queue.ErrQueueShutdown
 	}
@@ -187,7 +188,7 @@ func (w *Worker) Queue(job queue.QueuedMessage) error {
 }
 
 // Request fetch new task from queue
-func (w *Worker) Request() (queue.QueuedMessage, error) {
+func (w *Worker) Request() (core.QueuedMessage, error) {
 	clock := 0
 loop:
 	for {
