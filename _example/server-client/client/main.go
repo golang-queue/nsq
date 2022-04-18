@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang-queue/nsq"
 	"github.com/golang-queue/queue"
+	"github.com/golang-queue/queue/core"
 )
 
 type job struct {
@@ -33,12 +34,13 @@ func main() {
 		nsq.WithChannel("foobar"),
 		// concurrent job number
 		nsq.WithMaxInFlight(10),
-		nsq.WithRunFunc(func(ctx context.Context, m queue.QueuedMessage) error {
+		nsq.WithRunFunc(func(ctx context.Context, m core.QueuedMessage) error {
 			var v *job
 			if err := json.Unmarshal(m.Bytes(), &v); err != nil {
 				return err
 			}
 			rets <- v.Message
+			time.Sleep(6 * time.Second)
 			return nil
 		}),
 	)
