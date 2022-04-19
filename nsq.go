@@ -23,7 +23,7 @@ type Worker struct {
 	stop      chan struct{}
 	stopFlag  int32
 	startFlag int32
-	opts      options
+	opts      Options
 	tasks     chan *nsq.Message
 }
 

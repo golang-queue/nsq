@@ -8,10 +8,20 @@ import (
 	"github.com/golang-queue/queue/core"
 )
 
-// Option for queue system
-type Option func(*options)
+// An Option configures a mutex.
+type Option interface {
+	Apply(*Options)
+}
 
-type options struct {
+// OptionFunc is a function that configures a queue.
+type OptionFunc func(*Options)
+
+// Apply calls f(option)
+func (f OptionFunc) Apply(option *Options) {
+	f(option)
+}
+
+type Options struct {
 	maxInFlight     int
 	addr            string
 	topic           string
@@ -23,55 +33,55 @@ type options struct {
 
 // WithAddr setup the addr of NSQ
 func WithAddr(addr string) Option {
-	return func(w *options) {
-		w.addr = addr
-	}
+	return OptionFunc(func(o *Options) {
+		o.addr = addr
+	})
 }
 
 // WithTopic setup the topic of NSQ
 func WithTopic(topic string) Option {
-	return func(w *options) {
-		w.topic = topic
-	}
+	return OptionFunc(func(o *Options) {
+		o.topic = topic
+	})
 }
 
 // WithChannel setup the channel of NSQ
 func WithChannel(channel string) Option {
-	return func(w *options) {
-		w.channel = channel
-	}
+	return OptionFunc(func(o *Options) {
+		o.channel = channel
+	})
 }
 
 // WithRunFunc setup the run func of queue
 func WithRunFunc(fn func(context.Context, core.QueuedMessage) error) Option {
-	return func(w *options) {
-		w.runFunc = fn
-	}
+	return OptionFunc(func(o *Options) {
+		o.runFunc = fn
+	})
 }
 
 // WithMaxInFlight Maximum number of messages to allow in flight (concurrency knob)
 func WithMaxInFlight(num int) Option {
-	return func(w *options) {
-		w.maxInFlight = num
-	}
+	return OptionFunc(func(o *Options) {
+		o.maxInFlight = num
+	})
 }
 
 // WithLogger set custom logger
 func WithLogger(l queue.Logger) Option {
-	return func(w *options) {
-		w.logger = l
-	}
+	return OptionFunc(func(o *Options) {
+		o.logger = l
+	})
 }
 
 // WithDisableConsumer disable consumer
 func WithDisableConsumer() Option {
-	return func(w *options) {
-		w.disableConsumer = true
-	}
+	return OptionFunc(func(o *Options) {
+		o.disableConsumer = true
+	})
 }
 
-func newOptions(opts ...Option) options {
-	defaultOpts := options{
+func newOptions(opts ...Option) Options {
+	defaultOpts := Options{
 		addr:        "127.0.0.1:4150",
 		topic:       "gorush",
 		channel:     "ch",
@@ -86,7 +96,7 @@ func newOptions(opts ...Option) options {
 	// Loop through each option
 	for _, opt := range opts {
 		// Call the option giving the instantiated
-		opt(&defaultOpts)
+		opt.Apply(&defaultOpts)
 	}
 
 	return defaultOpts
