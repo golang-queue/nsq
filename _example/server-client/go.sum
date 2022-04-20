@@ -1,6 +1,10 @@
+github.com/appleboy/graceful v0.0.4 h1:Q4LCeq4DFy59qiACLtuH+mSqDERtUzwkQbCWpRaWwvQ=
+github.com/appleboy/graceful v0.0.4/go.mod h1:Q2mVx0t+N0lCDZc5MJudbcpTm6cgGM/J2gZCZIqD9dc=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/golang-queue/queue v0.0.13-0.20220408035349-ed24fa14aa00 h1:EFiINOvAuGgxiE3MNu7PKY0O2Pvvc7r6YApdqAnhWnQ=
 github.com/golang-queue/queue v0.0.13-0.20220408035349-ed24fa14aa00/go.mod h1:g1yxxDl8JMo4gUfxt11fjjU3SXU1ah61EvwshmDoSIs=
+github.com/golang-queue/queue v0.0.13-0.20220420024737-03d90b78b732 h1:Wqs2Dsl+jUCcGSniLP5o1lmDcGrRvujRCTyqFwHDrvw=
+github.com/golang-queue/queue v0.0.13-0.20220420024737-03d90b78b732/go.mod h1:g1yxxDl8JMo4gUfxt11fjjU3SXU1ah61EvwshmDoSIs=
 github.com/golang/mock v1.6.0 h1:ErTB+efbowRARo13NNdxyJji2egdxLGQhRaY+DUumQc=
 github.com/golang/snappy v0.0.1 h1:Qgr9rKW7uDUkrbSmQeiDsGa8SjGyCOGtuasMWwvp2P4=
 github.com/golang/snappy v0.0.1/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
