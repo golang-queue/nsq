@@ -23,7 +23,7 @@ func (j *job) Bytes() []byte {
 }
 
 func main() {
-	taskN := 100
+	taskN := 5
 
 	// define the worker
 	w := nsq.NewWorker(

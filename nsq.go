@@ -32,7 +32,7 @@ func NewWorker(opts ...Option) *Worker {
 	w := &Worker{
 		opts:  newOptions(opts...),
 		stop:  make(chan struct{}),
-		tasks: make(chan *nsq.Message, 1),
+		tasks: make(chan *nsq.Message),
 	}
 
 	cfg := nsq.NewConfig()
@@ -76,13 +76,19 @@ func (w *Worker) startConsumer(cfg *nsq.Config) error {
 			return nil
 		}
 
-		select {
-		case w.tasks <- msg:
-		case <-w.stop:
-			if msg != nil {
-				// re-queue the job if worker has been shutdown.
-				w.opts.logger.Info("re-queue the old job")
-				msg.Requeue(-1)
+	loop:
+		for {
+			select {
+			case w.tasks <- msg:
+				break loop
+			case <-w.stop:
+				if msg != nil {
+					// re-queue the job if worker has been shutdown.
+					msg.Requeue(-1)
+				}
+				break loop
+			case <-time.After(2 * time.Second):
+				msg.Touch()
 			}
 		}
 

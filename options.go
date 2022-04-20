@@ -2,7 +2,6 @@ package nsq
 
 import (
 	"context"
-	"runtime"
 
 	"github.com/golang-queue/queue"
 	"github.com/golang-queue/queue/core"
@@ -85,7 +84,7 @@ func newOptions(opts ...Option) Options {
 		addr:        "127.0.0.1:4150",
 		topic:       "gorush",
 		channel:     "ch",
-		maxInFlight: runtime.NumCPU(),
+		maxInFlight: 1,
 
 		logger: queue.NewLogger(),
 		runFunc: func(context.Context, core.QueuedMessage) error {
