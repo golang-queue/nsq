@@ -277,7 +277,6 @@ func TestHandleTimeout(t *testing.T) {
 			time.Sleep(200 * time.Millisecond)
 			return nil
 		}),
-		WithDisableConsumer(),
 	)
 
 	err := w.handle(job)
@@ -294,7 +293,6 @@ func TestHandleTimeout(t *testing.T) {
 			time.Sleep(200 * time.Millisecond)
 			return nil
 		}),
-		WithDisableConsumer(),
 	)
 
 	done := make(chan error)
@@ -318,7 +316,6 @@ func TestJobComplete(t *testing.T) {
 		WithRunFunc(func(ctx context.Context, m core.QueuedMessage) error {
 			return errors.New("job completed")
 		}),
-		WithDisableConsumer(),
 	)
 
 	err := w.handle(job)
@@ -369,6 +366,7 @@ func TestNSQStatsinQueue(t *testing.T) {
 	assert.NoError(t, q.Queue(m))
 	assert.NoError(t, q.Queue(m))
 	q.Start()
+	time.Sleep(200 * time.Millisecond)
 	assert.Equal(t, int(1), w.Stats().Connections)
 	time.Sleep(500 * time.Millisecond)
 	assert.Equal(t, uint64(2), w.Stats().MessagesReceived)
@@ -390,14 +388,17 @@ func TestNSQStatsInWorker(t *testing.T) {
 	assert.NoError(t, w.Queue(m))
 	assert.NoError(t, w.Queue(m))
 	assert.NoError(t, w.Queue(m))
-	assert.Equal(t, int(1), w.Stats().Connections)
+	assert.Nil(t, w.Stats())
 
-	time.Sleep(50 * time.Millisecond)
+	task, err := w.Request()
+	assert.Equal(t, int(1), w.Stats().Connections)
+	assert.NotNil(t, task)
+	assert.NoError(t, err)
 
 	assert.Equal(t, uint64(1), w.Stats().MessagesReceived)
-	assert.Equal(t, uint64(0), w.Stats().MessagesFinished)
+	assert.Equal(t, uint64(1), w.Stats().MessagesFinished)
 	assert.Equal(t, uint64(0), w.Stats().MessagesRequeued)
-
+	time.Sleep(50 * time.Millisecond)
 	_ = w.Shutdown()
 	time.Sleep(50 * time.Millisecond)
 	assert.Equal(t, uint64(1), w.Stats().MessagesRequeued)

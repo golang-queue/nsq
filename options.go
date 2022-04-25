@@ -21,13 +21,12 @@ func (f OptionFunc) Apply(option *Options) {
 }
 
 type Options struct {
-	maxInFlight     int
-	addr            string
-	topic           string
-	channel         string
-	runFunc         func(context.Context, core.QueuedMessage) error
-	logger          queue.Logger
-	disableConsumer bool
+	maxInFlight int
+	addr        string
+	topic       string
+	channel     string
+	runFunc     func(context.Context, core.QueuedMessage) error
+	logger      queue.Logger
 }
 
 // WithAddr setup the addr of NSQ
@@ -69,13 +68,6 @@ func WithMaxInFlight(num int) Option {
 func WithLogger(l queue.Logger) Option {
 	return OptionFunc(func(o *Options) {
 		o.logger = l
-	})
-}
-
-// WithDisableConsumer disable consumer
-func WithDisableConsumer() Option {
-	return OptionFunc(func(o *Options) {
-		o.disableConsumer = true
 	})
 }
 
