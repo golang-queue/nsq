@@ -30,7 +30,6 @@ func main() {
 		nsq.WithAddr("127.0.0.1:4150"),
 		nsq.WithTopic("example"),
 		nsq.WithChannel("foobar"),
-		nsq.WithDisableConsumer(),
 	)
 
 	// define the queue
