@@ -3,7 +3,7 @@ module github.com/golang-queue/nsq
 go 1.18
 
 require (
-	github.com/golang-queue/queue v0.1.0
+	github.com/golang-queue/queue v0.1.2
 	github.com/nsqio/go-nsq v1.1.0
 	github.com/stretchr/testify v1.7.1
 	go.uber.org/goleak v1.1.12
