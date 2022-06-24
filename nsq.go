@@ -200,9 +200,9 @@ loop:
 			if !ok {
 				return nil, queue.ErrQueueHasBeenClosed
 			}
-			var data *queue.Job
+			var data queue.Job
 			_ = json.Unmarshal(task.Body, &data)
-			return data, nil
+			return &data, nil
 		case <-time.After(1 * time.Second):
 			if clock == 5 {
 				break loop
