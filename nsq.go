@@ -44,6 +44,8 @@ func NewWorker(opts ...Option) *Worker {
 		panic(err)
 	}
 
+	w.p.SetLoggerLevel(nsq.LogLevel(w.opts.logLvl))
+
 	return w
 }
 
@@ -61,6 +63,8 @@ func (w *Worker) startConsumer() (err error) {
 		if err != nil {
 			return
 		}
+
+		w.q.SetLoggerLevel(nsq.LogLevel(w.opts.logLvl))
 
 		w.q.AddHandler(nsq.HandlerFunc(func(msg *nsq.Message) error {
 			if len(msg.Body) == 0 {
