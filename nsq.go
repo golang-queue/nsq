@@ -44,7 +44,7 @@ func NewWorker(opts ...Option) *Worker {
 		panic(err)
 	}
 
-	w.p.SetLoggerLevel(nsq.LogLevel(w.opts.logLvl))
+	w.p.SetLoggerLevel(w.opts.logLevel)
 
 	return w
 }
@@ -64,8 +64,7 @@ func (w *Worker) startConsumer() (err error) {
 			return
 		}
 
-		w.q.SetLoggerLevel(nsq.LogLevel(w.opts.logLvl))
-
+		w.q.SetLoggerLevel(w.opts.logLevel)
 		w.q.AddHandler(nsq.HandlerFunc(func(msg *nsq.Message) error {
 			if len(msg.Body) == 0 {
 				// Returning nil will automatically send a FIN command to NSQ to mark the message as processed.

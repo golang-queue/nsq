@@ -9,15 +9,6 @@ import (
 	nsq "github.com/nsqio/go-nsq"
 )
 
-// Log levels (same as [nsq.LogLevel])
-const (
-	LogLevelDebug nsq.LogLevel = iota
-	LogLevelInfo
-	LogLevelWarning
-	LogLevelError
-	LogLevelMax = iota - 1 // convenience - match highest log level
-)
-
 // An Option configures a mutex.
 type Option interface {
 	Apply(*Options)
@@ -38,7 +29,7 @@ type Options struct {
 	channel     string
 	runFunc     func(context.Context, core.QueuedMessage) error
 	logger      queue.Logger
-	logLvl      nsq.LogLevel
+	logLevel    nsq.LogLevel
 }
 
 // WithAddr setup the addr of NSQ
@@ -86,7 +77,7 @@ func WithLogger(l queue.Logger) Option {
 // WithLogLevel set custom [nsq] log level
 func WithLogLevel(lvl nsq.LogLevel) Option {
 	return OptionFunc(func(o *Options) {
-		o.logLvl = lvl
+		o.logLevel = lvl
 	})
 }
 
@@ -97,8 +88,8 @@ func newOptions(opts ...Option) Options {
 		channel:     "ch",
 		maxInFlight: 1,
 
-		logger: queue.NewLogger(),
-		logLvl: LogLevelInfo,
+		logger:   queue.NewLogger(),
+		logLevel: nsq.LogLevelInfo,
 		runFunc: func(context.Context, core.QueuedMessage) error {
 			return nil
 		},
