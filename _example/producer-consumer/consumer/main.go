@@ -36,7 +36,7 @@ func main() {
 		nsq.WithAddr("127.0.0.1:4150"),
 		nsq.WithTopic("example"),
 		nsq.WithChannel("foobar"),
-		nsq.WithRunFunc(func(ctx context.Context, m core.QueuedMessage) error {
+		nsq.WithRunFunc(func(ctx context.Context, m core.TaskMessage) error {
 			var v *job
 			if err := json.Unmarshal(m.Bytes(), &v); err != nil {
 				return err

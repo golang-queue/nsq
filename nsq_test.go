@@ -31,6 +31,10 @@ func (m mockMessage) Bytes() []byte {
 	return []byte(m.Message)
 }
 
+func (m mockMessage) Payload() []byte {
+	return []byte(m.Message)
+}
+
 func TestNSQDefaultFlow(t *testing.T) {
 	m := &mockMessage{
 		Message: "foo",
@@ -80,7 +84,7 @@ func TestNSQCustomFuncAndWait(t *testing.T) {
 		WithAddr(host+":4150"),
 		WithTopic("test3"),
 		WithMaxInFlight(10),
-		WithRunFunc(func(ctx context.Context, m core.QueuedMessage) error {
+		WithRunFunc(func(ctx context.Context, m core.TaskMessage) error {
 			time.Sleep(500 * time.Millisecond)
 			return nil
 		}),
@@ -131,7 +135,7 @@ func TestJobReachTimeout(t *testing.T) {
 		WithAddr(host+":4150"),
 		WithTopic("timeout"),
 		WithMaxInFlight(2),
-		WithRunFunc(func(ctx context.Context, m core.QueuedMessage) error {
+		WithRunFunc(func(ctx context.Context, m core.TaskMessage) error {
 			for {
 				select {
 				case <-ctx.Done():
@@ -155,7 +159,9 @@ func TestJobReachTimeout(t *testing.T) {
 	assert.NoError(t, err)
 	q.Start()
 	time.Sleep(400 * time.Millisecond)
-	assert.NoError(t, q.Queue(m, job.WithTimeout(20*time.Millisecond)))
+	assert.NoError(t, q.Queue(m, job.AllowOption{
+		Timeout: job.Time(20 * time.Millisecond),
+	}))
 	time.Sleep(2 * time.Second)
 	q.Release()
 }
@@ -168,7 +174,7 @@ func TestCancelJobAfterShutdown(t *testing.T) {
 		WithAddr(host+":4150"),
 		WithTopic("cancel"),
 		WithLogger(queue.NewLogger()),
-		WithRunFunc(func(ctx context.Context, m core.QueuedMessage) error {
+		WithRunFunc(func(ctx context.Context, m core.TaskMessage) error {
 			for {
 				select {
 				case <-ctx.Done():
@@ -192,7 +198,9 @@ func TestCancelJobAfterShutdown(t *testing.T) {
 	assert.NoError(t, err)
 	q.Start()
 	time.Sleep(400 * time.Millisecond)
-	assert.NoError(t, q.Queue(m, job.WithTimeout(3*time.Second)))
+	assert.NoError(t, q.Queue(m, job.AllowOption{
+		Timeout: job.Time(3 * time.Second),
+	}))
 	time.Sleep(2 * time.Second)
 	q.Release()
 }
@@ -205,7 +213,7 @@ func TestGoroutineLeak(t *testing.T) {
 		WithAddr(host+":4150"),
 		WithTopic("GoroutineLeak"),
 		WithLogger(queue.NewEmptyLogger()),
-		WithRunFunc(func(ctx context.Context, m core.QueuedMessage) error {
+		WithRunFunc(func(ctx context.Context, m core.TaskMessage) error {
 			for {
 				select {
 				case <-ctx.Done():
@@ -249,7 +257,7 @@ func TestGoroutinePanic(t *testing.T) {
 	w := NewWorker(
 		WithAddr(host+":4150"),
 		WithTopic("GoroutinePanic"),
-		WithRunFunc(func(ctx context.Context, m core.QueuedMessage) error {
+		WithRunFunc(func(ctx context.Context, m core.TaskMessage) error {
 			panic("missing something")
 		}),
 	)
@@ -275,7 +283,7 @@ func TestNSQStatsinQueue(t *testing.T) {
 	w := NewWorker(
 		WithAddr(host+":4150"),
 		WithTopic("nsq_stats"),
-		WithRunFunc(func(ctx context.Context, m core.QueuedMessage) error {
+		WithRunFunc(func(ctx context.Context, m core.TaskMessage) error {
 			log.Println("get message")
 			return nil
 		}),

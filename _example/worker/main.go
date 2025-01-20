@@ -35,7 +35,7 @@ func main() {
 		nsq.WithChannel("foobar"),
 		// concurrent job number
 		nsq.WithMaxInFlight(10),
-		nsq.WithRunFunc(func(ctx context.Context, m core.QueuedMessage) error {
+		nsq.WithRunFunc(func(ctx context.Context, m core.TaskMessage) error {
 			var v *job
 			if err := json.Unmarshal(m.Bytes(), &v); err != nil {
 				return err

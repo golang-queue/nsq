@@ -27,7 +27,7 @@ type Options struct {
 	addr        string
 	topic       string
 	channel     string
-	runFunc     func(context.Context, core.QueuedMessage) error
+	runFunc     func(context.Context, core.TaskMessage) error
 	logger      queue.Logger
 	logLevel    nsq.LogLevel
 }
@@ -54,7 +54,7 @@ func WithChannel(channel string) Option {
 }
 
 // WithRunFunc setup the run func of queue
-func WithRunFunc(fn func(context.Context, core.QueuedMessage) error) Option {
+func WithRunFunc(fn func(context.Context, core.TaskMessage) error) Option {
 	return OptionFunc(func(o *Options) {
 		o.runFunc = fn
 	})
@@ -90,7 +90,7 @@ func newOptions(opts ...Option) Options {
 
 		logger:   queue.NewLogger(),
 		logLevel: nsq.LogLevelInfo,
-		runFunc: func(context.Context, core.QueuedMessage) error {
+		runFunc: func(context.Context, core.TaskMessage) error {
 			return nil
 		},
 	}
