@@ -48,6 +48,7 @@ import (
 
   "github.com/golang-queue/nsq"
   "github.com/golang-queue/queue"
+  "github.com/golang-queue/queue/core"
 )
 
 type job struct {
@@ -73,7 +74,7 @@ func main() {
     nsq.WithChannel("foobar"),
     // concurrent job number
     nsq.WithMaxInFlight(10),
-    nsq.WithRunFunc(func(ctx context.Context, m queue.QueuedMessage) error {
+    nsq.WithRunFunc(func(ctx context.Context, m core.TaskMessage) error {
       var v *job
       if err := json.Unmarshal(m.Payload(), &v); err != nil {
         return err
@@ -104,7 +105,7 @@ func main() {
   // wait until all tasks done
   for i := 0; i < taskN; i++ {
     fmt.Println("message:", <-rets)
-    time.Sleep(50 * time.Millisecond)
+    time.Sleep(10 * time.Millisecond)
   }
 }
 ```
