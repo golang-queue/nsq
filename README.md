@@ -75,7 +75,7 @@ func main() {
     nsq.WithMaxInFlight(10),
     nsq.WithRunFunc(func(ctx context.Context, m queue.QueuedMessage) error {
       var v *job
-      if err := json.Unmarshal(m.Bytes(), &v); err != nil {
+      if err := json.Unmarshal(m.Payload(), &v); err != nil {
         return err
       }
       rets <- v.Message

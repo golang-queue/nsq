@@ -139,7 +139,7 @@ func TestJobReachTimeout(t *testing.T) {
 			for {
 				select {
 				case <-ctx.Done():
-					log.Println("get data:", string(m.Bytes()))
+					log.Println("get data:", string(m.Payload()))
 					if errors.Is(ctx.Err(), context.Canceled) {
 						log.Println("queue has been shutdown and cancel the job")
 					} else if errors.Is(ctx.Err(), context.DeadlineExceeded) {
@@ -178,7 +178,7 @@ func TestCancelJobAfterShutdown(t *testing.T) {
 			for {
 				select {
 				case <-ctx.Done():
-					log.Println("get data:", string(m.Bytes()))
+					log.Println("get data:", string(m.Payload()))
 					if errors.Is(ctx.Err(), context.Canceled) {
 						log.Println("queue has been shutdown and cancel the job")
 					} else if errors.Is(ctx.Err(), context.DeadlineExceeded) {
@@ -217,7 +217,7 @@ func TestGoroutineLeak(t *testing.T) {
 			for {
 				select {
 				case <-ctx.Done():
-					log.Println("get data:", string(m.Bytes()))
+					log.Println("get data:", string(m.Payload()))
 					if errors.Is(ctx.Err(), context.Canceled) {
 						log.Println("queue has been shutdown and cancel the job")
 					} else if errors.Is(ctx.Err(), context.DeadlineExceeded) {
@@ -225,7 +225,7 @@ func TestGoroutineLeak(t *testing.T) {
 					}
 					return nil
 				default:
-					log.Println("get data:", string(m.Bytes()))
+					log.Println("get data:", string(m.Payload()))
 					time.Sleep(50 * time.Millisecond)
 					return nil
 				}
