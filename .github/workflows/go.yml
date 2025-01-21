@@ -29,17 +29,6 @@ jobs:
             go-build: ~/.cache/go-build
     name: ${{ matrix.os }} @ Go ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
-    env:
-      GO111MODULE: on
-      GOPROXY: https://proxy.golang.org
-
-    # Service containers to run with `container-job`
-    services:
-      nsqd:
-        image: appleboy/nsqd
-        ports:
-          - 4150:4150
-          - 4151:4151
 
     steps:
       - name: Set up Go ${{ matrix.go }}
