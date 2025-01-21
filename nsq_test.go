@@ -12,8 +12,11 @@ import (
 	"github.com/golang-queue/queue"
 	"github.com/golang-queue/queue/core"
 	"github.com/golang-queue/queue/job"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
 )
 
@@ -35,12 +38,37 @@ func (m mockMessage) Payload() []byte {
 	return []byte(m.Message)
 }
 
+func setupNSQContainer(ctx context.Context, t *testing.T) (testcontainers.Container, string) {
+	req := testcontainers.ContainerRequest{
+		Image: "nsqio/nsq:v1.3.0",
+		ExposedPorts: []string{
+			"4150/tcp", // nsqd port
+			"4151/tcp", // http port
+		},
+		WaitingFor: wait.ForLog("TCP: listening on"),
+		Cmd:        []string{"nsqd"},
+	}
+	nsqC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+	require.NoError(t, err)
+
+	endpoint, err := nsqC.Endpoint(ctx, "")
+	require.NoError(t, err)
+
+	return nsqC, endpoint
+}
+
 func TestNSQDefaultFlow(t *testing.T) {
+	ctx := context.Background()
+	natsC, endpoint := setupNSQContainer(ctx, t)
+	defer testcontainers.CleanupContainer(t, natsC)
 	m := &mockMessage{
 		Message: "foo",
 	}
 	w := NewWorker(
-		WithAddr(host+":4150"),
+		WithAddr(endpoint),
 		WithTopic("test1"),
 		WithChannel("test1"),
 	)
