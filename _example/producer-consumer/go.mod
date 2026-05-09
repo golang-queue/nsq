@@ -1,15 +1,15 @@
 module example
 
-go 1.22
+go 1.25.0
 
 require (
-	github.com/appleboy/graceful v0.0.4
-	github.com/golang-queue/nsq v0.0.0-00010101000000-000000000000
-	github.com/golang-queue/queue v0.3.0
+	github.com/appleboy/graceful v1.3.0
+	github.com/golang-queue/nsq v0.3.0
+	github.com/golang-queue/queue v0.5.0
 )
 
 require (
-	github.com/golang/snappy v0.0.4 // indirect
+	github.com/golang/snappy v1.0.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/nsqio/go-nsq v1.1.0 // indirect
 )
