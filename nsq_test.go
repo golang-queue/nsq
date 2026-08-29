@@ -20,6 +20,8 @@ import (
 	"go.uber.org/goleak"
 )
 
+const testMessage = "foo"
+
 func TestMain(m *testing.M) {
 	goleak.VerifyTestMain(m)
 }
@@ -63,7 +65,7 @@ func TestNSQDefaultFlow(t *testing.T) {
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := &mockMessage{
-		Message: "foo",
+		Message: testMessage,
 	}
 	w := NewWorker(
 		WithAddr(endpoint),
@@ -110,7 +112,7 @@ func TestNSQCustomFuncAndWait(t *testing.T) {
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := &mockMessage{
-		Message: "foo",
+		Message: testMessage,
 	}
 	w := NewWorker(
 		WithAddr(endpoint),
@@ -142,7 +144,7 @@ func TestEnqueueJobAfterShutdown(t *testing.T) {
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := mockMessage{
-		Message: "foo",
+		Message: testMessage,
 	}
 	w := NewWorker(
 		WithAddr(endpoint),
@@ -167,7 +169,7 @@ func TestJobReachTimeout(t *testing.T) {
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := mockMessage{
-		Message: "foo",
+		Message: testMessage,
 	}
 	w := NewWorker(
 		WithAddr(endpoint),
@@ -251,7 +253,7 @@ func TestGoroutineLeak(t *testing.T) {
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := mockMessage{
-		Message: "foo",
+		Message: testMessage,
 	}
 	w := NewWorker(
 		WithAddr(endpoint),
@@ -299,7 +301,7 @@ func TestGoroutinePanic(t *testing.T) {
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := mockMessage{
-		Message: "foo",
+		Message: testMessage,
 	}
 	w := NewWorker(
 		WithAddr(endpoint),
@@ -328,7 +330,7 @@ func TestNSQStatsinQueue(t *testing.T) {
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := mockMessage{
-		Message: "foo",
+		Message: testMessage,
 	}
 	w := NewWorker(
 		WithAddr(endpoint),
@@ -360,7 +362,7 @@ func TestNSQStatsInWorker(t *testing.T) {
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := mockMessage{
-		Message: "foo",
+		Message: testMessage,
 	}
 	w := NewWorker(
 		WithAddr(endpoint),
