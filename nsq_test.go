@@ -76,11 +76,11 @@ func TestNSQDefaultFlow(t *testing.T) {
 		queue.WithWorker(w),
 		queue.WithWorkerCount(2),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	q.Start()
-	assert.NoError(t, q.Queue(m))
+	require.NoError(t, q.Queue(m))
 	m.Message = "bar"
-	assert.NoError(t, q.Queue(m))
+	require.NoError(t, q.Queue(m))
 	time.Sleep(1 * time.Second)
 	q.Release()
 }
@@ -97,12 +97,12 @@ func TestNSQShutdown(t *testing.T) {
 		queue.WithWorker(w),
 		queue.WithWorkerCount(2),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	q.Start()
 	time.Sleep(1 * time.Second)
 	q.Shutdown()
 	// check shutdown once
-	assert.Error(t, w.Shutdown())
+	require.Error(t, w.Shutdown())
 	assert.Equal(t, queue.ErrQueueShutdown, w.Shutdown())
 	q.Wait()
 }
@@ -127,13 +127,13 @@ func TestNSQCustomFuncAndWait(t *testing.T) {
 		queue.WithWorker(w),
 		queue.WithWorkerCount(10),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	q.Start()
 	time.Sleep(100 * time.Millisecond)
-	assert.NoError(t, q.Queue(m))
-	assert.NoError(t, q.Queue(m))
-	assert.NoError(t, q.Queue(m))
-	assert.NoError(t, q.Queue(m))
+	require.NoError(t, q.Queue(m))
+	require.NoError(t, q.Queue(m))
+	require.NoError(t, q.Queue(m))
+	require.NoError(t, q.Queue(m))
 	time.Sleep(1000 * time.Millisecond)
 	q.Release()
 	// you will see the execute time > 1000ms
@@ -153,13 +153,13 @@ func TestEnqueueJobAfterShutdown(t *testing.T) {
 		queue.WithWorker(w),
 		queue.WithWorkerCount(2),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	q.Start()
 	time.Sleep(400 * time.Millisecond)
 	q.Shutdown()
 	// can't queue task after shutdown
 	err = q.Queue(m)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, queue.ErrQueueShutdown, err)
 	q.Wait()
 }
@@ -196,10 +196,10 @@ func TestJobReachTimeout(t *testing.T) {
 		queue.WithWorker(w),
 		queue.WithWorkerCount(2),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	q.Start()
 	time.Sleep(400 * time.Millisecond)
-	assert.NoError(t, q.Queue(m, job.AllowOption{
+	require.NoError(t, q.Queue(m, job.AllowOption{
 		Timeout: job.Time(20 * time.Millisecond),
 	}))
 	time.Sleep(2 * time.Second)
@@ -238,10 +238,10 @@ func TestCancelJobAfterShutdown(t *testing.T) {
 		queue.WithWorker(w),
 		queue.WithWorkerCount(2),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	q.Start()
 	time.Sleep(400 * time.Millisecond)
-	assert.NoError(t, q.Queue(m, job.AllowOption{
+	require.NoError(t, q.Queue(m, job.AllowOption{
 		Timeout: job.Time(3 * time.Second),
 	}))
 	time.Sleep(2 * time.Second)
@@ -283,17 +283,17 @@ func TestGoroutineLeak(t *testing.T) {
 		queue.WithWorker(w),
 		queue.WithWorkerCount(10),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	q.Start()
 	time.Sleep(400 * time.Millisecond)
-	for i := 0; i < 500; i++ {
+	for i := range 500 {
 		m.Message = fmt.Sprintf("foobar: %d", i+1)
-		assert.NoError(t, q.Queue(m))
+		require.NoError(t, q.Queue(m))
 	}
 	time.Sleep(2 * time.Second)
 	q.Release()
 	time.Sleep(2 * time.Second)
-	fmt.Println("number of goroutines:", runtime.NumGoroutine())
+	t.Log("number of goroutines:", runtime.NumGoroutine())
 }
 
 func TestGoroutinePanic(t *testing.T) {
@@ -314,14 +314,14 @@ func TestGoroutinePanic(t *testing.T) {
 		queue.WithWorker(w),
 		queue.WithWorkerCount(2),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	q.Start()
 	time.Sleep(400 * time.Millisecond)
-	assert.NoError(t, q.Queue(m))
-	assert.NoError(t, q.Queue(m))
+	require.NoError(t, q.Queue(m))
+	require.NoError(t, q.Queue(m))
 	time.Sleep(2 * time.Second)
 	q.Shutdown()
-	assert.Error(t, q.Queue(m))
+	require.Error(t, q.Queue(m))
 	q.Wait()
 }
 
@@ -344,9 +344,9 @@ func TestNSQStatsinQueue(t *testing.T) {
 		queue.WithWorker(w),
 		queue.WithWorkerCount(1),
 	)
-	assert.NoError(t, err)
-	assert.NoError(t, q.Queue(m))
-	assert.NoError(t, q.Queue(m))
+	require.NoError(t, err)
+	require.NoError(t, q.Queue(m))
+	require.NoError(t, q.Queue(m))
 	q.Start()
 	time.Sleep(200 * time.Millisecond)
 	assert.Equal(t, int(1), w.Stats().Connections)
@@ -369,16 +369,16 @@ func TestNSQStatsInWorker(t *testing.T) {
 		WithTopic("nsq_stats_queue"),
 	)
 
-	assert.Equal(t, int(0), len(w.tasks))
-	assert.NoError(t, w.Queue(m))
-	assert.NoError(t, w.Queue(m))
-	assert.NoError(t, w.Queue(m))
+	assert.Empty(t, w.tasks)
+	require.NoError(t, w.Queue(m))
+	require.NoError(t, w.Queue(m))
+	require.NoError(t, w.Queue(m))
 	assert.Nil(t, w.Stats())
 
 	task, err := w.Request()
 	assert.Equal(t, int(1), w.Stats().Connections)
 	assert.NotNil(t, task)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, uint64(1), w.Stats().MessagesReceived)
 	assert.Equal(t, uint64(1), w.Stats().MessagesFinished)
