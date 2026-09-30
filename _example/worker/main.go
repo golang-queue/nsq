@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/golang-queue/nsq"
+
 	"github.com/golang-queue/queue"
 	"github.com/golang-queue/queue/core"
 )

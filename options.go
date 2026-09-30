@@ -5,7 +5,6 @@ import (
 
 	"github.com/golang-queue/queue"
 	"github.com/golang-queue/queue/core"
-
 	nsq "github.com/nsqio/go-nsq"
 )
 
