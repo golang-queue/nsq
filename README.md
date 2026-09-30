@@ -3,6 +3,7 @@
 [![Run Testing](https://github.com/golang-queue/nsq/actions/workflows/go.yml/badge.svg)](https://github.com/golang-queue/nsq/actions/workflows/go.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/golang-queue/queue)](https://goreportcard.com/report/github.com/golang-queue/queue)
 [![codecov](https://codecov.io/gh/golang-queue/nsq/branch/main/graph/badge.svg?token=D3CUES8M62)](https://codecov.io/gh/golang-queue/nsq)
+[![Trivy Security Scan](https://github.com/golang-queue/nsq/actions/workflows/security.yml/badge.svg)](https://github.com/golang-queue/nsq/actions/workflows/security.yml)
 
 NSQ as backend with [Queue package](https://github.com/golang-queue/queue) (A realtime distributed messaging platform)
 
