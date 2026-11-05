@@ -60,7 +60,7 @@ func setupNSQContainer(ctx context.Context, t *testing.T) (testcontainers.Contai
 }
 
 func TestNSQDefaultFlow(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := &mockMessage{
@@ -85,7 +85,7 @@ func TestNSQDefaultFlow(t *testing.T) {
 }
 
 func TestNSQShutdown(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	w := NewWorker(
@@ -107,7 +107,7 @@ func TestNSQShutdown(t *testing.T) {
 }
 
 func TestNSQCustomFuncAndWait(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := &mockMessage{
@@ -139,7 +139,7 @@ func TestNSQCustomFuncAndWait(t *testing.T) {
 }
 
 func TestEnqueueJobAfterShutdown(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := mockMessage{
@@ -164,7 +164,7 @@ func TestEnqueueJobAfterShutdown(t *testing.T) {
 }
 
 func TestJobReachTimeout(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := mockMessage{
@@ -206,7 +206,7 @@ func TestJobReachTimeout(t *testing.T) {
 }
 
 func TestCancelJobAfterShutdown(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := mockMessage{
@@ -248,7 +248,7 @@ func TestCancelJobAfterShutdown(t *testing.T) {
 }
 
 func TestGoroutineLeak(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := mockMessage{
@@ -296,7 +296,7 @@ func TestGoroutineLeak(t *testing.T) {
 }
 
 func TestGoroutinePanic(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := mockMessage{
@@ -325,7 +325,7 @@ func TestGoroutinePanic(t *testing.T) {
 }
 
 func TestNSQStatsinQueue(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := mockMessage{
@@ -357,7 +357,7 @@ func TestNSQStatsinQueue(t *testing.T) {
 }
 
 func TestNSQStatsInWorker(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	natsC, endpoint := setupNSQContainer(ctx, t)
 	defer testcontainers.CleanupContainer(t, natsC)
 	m := mockMessage{
