@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -104,6 +106,60 @@ func TestNSQShutdown(t *testing.T) {
 	require.Error(t, w.Shutdown())
 	assert.Equal(t, queue.ErrQueueShutdown, w.Shutdown())
 	q.Wait()
+}
+
+func TestNSQRequestAfterShutdown(t *testing.T) {
+	// Shutdown must take precedence over consumer setup errors.
+	w := NewWorker(WithTopic(""))
+	require.NoError(t, w.Shutdown())
+
+	task, err := w.Request()
+	assert.Nil(t, task)
+	assert.Equal(t, queue.ErrQueueShutdown, err)
+	assert.Nil(t, w.Stats())
+}
+
+func TestNSQConcurrentStartAndShutdown(t *testing.T) {
+	ctx := context.Background()
+	natsC, endpoint := setupNSQContainer(ctx, t)
+	defer testcontainers.CleanupContainer(t, natsC)
+
+	for i := range 10 {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			w := NewWorker(WithAddr(endpoint), WithTopic("shutdown_race"))
+			defer w.Shutdown()
+			start := make(chan struct{})
+			requestErr := make(chan error, 1)
+			go func() {
+				<-start
+				_, err := w.Request()
+				requestErr <- err
+			}()
+
+			var wg sync.WaitGroup
+			wg.Go(func() {
+				<-start
+				for range 100 {
+					w.Stats()
+				}
+			})
+
+			close(start)
+			require.NoError(t, w.Shutdown())
+			err := <-requestErr
+			assert.True(
+				t,
+				errors.Is(err, queue.ErrQueueShutdown) ||
+					errors.Is(err, queue.ErrQueueHasBeenClosed),
+				"unexpected request error: %v",
+				err,
+			)
+			wg.Wait()
+			if stats := w.Stats(); stats != nil {
+				assert.Equal(t, 0, stats.Connections)
+			}
+		})
+	}
 }
 
 func TestNSQCustomFuncAndWait(t *testing.T) {

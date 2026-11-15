@@ -17,6 +17,7 @@ var _ core.Worker = (*Worker)(nil)
 
 // Worker for NSQ
 type Worker struct {
+	mu        sync.RWMutex
 	q         *nsq.Consumer
 	p         *nsq.Producer
 	cfg       *nsq.Config
@@ -57,6 +58,13 @@ func (w *Worker) startProducer() error {
 }
 
 func (w *Worker) startConsumer() (err error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if w.stopFlag.Load() == 1 {
+		return queue.ErrQueueShutdown
+	}
+
 	w.startOnce.Do(func() {
 		w.q, err = nsq.NewConsumer(w.opts.topic, w.opts.channel, w.cfg)
 		if err != nil {
@@ -114,10 +122,13 @@ func (w *Worker) Shutdown() error {
 		// notify shtdown event to worker and consumer
 		close(w.stop)
 		// stop producer and consumer
-		if w.q != nil {
-			w.q.ChangeMaxInFlight(0)
-			w.q.Stop()
-			<-w.q.StopChan
+		w.mu.RLock()
+		q := w.q
+		w.mu.RUnlock()
+		if q != nil {
+			q.ChangeMaxInFlight(0)
+			q.Stop()
+			<-q.StopChan
 		}
 		w.p.Stop()
 
@@ -166,6 +177,9 @@ loop:
 
 // Stats retrieves the current connection and message statistics for a Consumer
 func (w *Worker) Stats() *nsq.ConsumerStats {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+
 	if w.q == nil {
 		return nil
 	}
